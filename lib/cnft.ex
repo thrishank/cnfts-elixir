@@ -1,6 +1,5 @@
 defmodule CNFT do
   use Rustler, otp_app: :cnft, crate: "cnft"
 
-  def add(_a, _b), do: :erlang.nif_error(:nif_not_loaded)
-  def key(), do: :erlang.nif_error(:nif_not_loaded)
+  def create_tree_transaction(rpc_client, merkle_tree, payer), do: :erlang.nif_error(:nif_not_loaded)
 end
