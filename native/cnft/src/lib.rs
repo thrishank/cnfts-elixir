@@ -1,12 +1,15 @@
 use mpl_bubblegum::{
     accounts::TreeConfig,
-    instructions::{CreateTreeConfigBuilder, MintV1Builder},
+    instructions::{CreateTreeConfigBuilder, MintV1Builder, TransferBuilder},
     types::{Creator, MetadataArgs, TokenProgramVersion, TokenStandard},
 };
 use rustler::{Decoder, Error, NifResult, Term};
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::{pubkey::Pubkey, system_instruction, transaction::Transaction};
+use solana_sdk::{
+    instruction::AccountMeta, pubkey::Pubkey, system_instruction, transaction::Transaction,
+};
 use spl_account_compression::{state::CONCURRENT_MERKLE_TREE_HEADER_SIZE_V1, ConcurrentMerkleTree};
+use spl_merkle_tree_reference::{MerkleTree, Node};
 use std::str::FromStr;
 
 // Wrapper type for Pubkey
@@ -127,6 +130,59 @@ fn mint_transaction(
 
     let tx = Transaction::new_with_payer(&[mint_ix], Some(&payer));
 
+    let serialized_tx = match bincode::serialize(&tx) {
+        Ok(tx) => tx,
+        Err(_) => return Err(Error::RaiseAtom("failed_to_serialize_transaction")),
+    };
+
+    Ok(serialized_tx)
+}
+
+#[rustler::nif]
+fn transfer_transaction(
+    tree: PubkeyWrapper,
+    owner: PubkeyWrapper,
+    payer: PubkeyWrapper,
+    receiver: PubkeyWrapper,
+    nonce: u32,
+) -> NifResult<Vec<u8>> {
+    let tree = tree.0;
+    let owner = owner.0;
+    let payer = payer.0;
+    let receiver = receiver.0;
+
+    let (tree_config, _) = TreeConfig::find_pda(&tree);
+
+    let proof_tree = MerkleTree::new(vec![Node::default(); 1 << 14].as_slice()); // MAX_DEPTH
+
+    // Get the proof for the leaf at the given nonce
+    let proof: Vec<AccountMeta> = proof_tree
+        .get_proof_of_leaf(nonce as usize)
+        .iter()
+        .map(|node| AccountMeta {
+            pubkey: Pubkey::new_from_array(*node),
+            is_signer: false,
+            is_writable: false,
+        })
+        .collect();
+
+    // Create the transfer instruction
+    let transfer_ix = TransferBuilder::new()
+        .leaf_owner(owner, true)
+        .leaf_delegate(owner, false)
+        .merkle_tree(tree)
+        .tree_config(tree_config)
+        .new_leaf_owner(receiver) // Assuming the payer is the new owner
+        .nonce(nonce as u64)
+        .index(nonce)
+        .root(proof_tree.root)
+        .add_remaining_accounts(&proof)
+        .instruction();
+
+    // Create the transaction
+    let tx = Transaction::new_with_payer(&[transfer_ix], Some(&payer));
+
+    // Serialize the transaction
     let serialized_tx = match bincode::serialize(&tx) {
         Ok(tx) => tx,
         Err(_) => return Err(Error::RaiseAtom("failed_to_serialize_transaction")),
