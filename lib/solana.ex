@@ -15,8 +15,9 @@ defmodule SolanaTransactionSender do
     - {:ok, signature} on success
     - {:error, reason} on failure
   """
-  def sign_and_send_transaction(raw_transaction, private_key, rpc_url \\ "https://api.mainnet-beta.solana.com") do
-    with {:ok, keypair} <- decode_private_key(private_key),
+  def sign_and_send_transaction(raw_transaction, private_key, rpc_url) do
+    with {:ok, _} <- validate_transaction(raw_transaction),
+         {:ok, keypair} <- decode_private_key(private_key),
          {:ok, signed_tx} <- sign_transaction(raw_transaction, keypair),
          {:ok, encoded_tx} <- encode_transaction(signed_tx),
          {:ok, signature} <- send_transaction(encoded_tx, rpc_url) do
@@ -27,20 +28,42 @@ defmodule SolanaTransactionSender do
   end
 
   @doc """
+  Validates the raw transaction format.
+  """
+  def validate_transaction(transaction) when is_binary(transaction) do
+    if byte_size(transaction) < 8 do
+      {:error, "Transaction too short"}
+    else
+      {:ok, transaction}
+    end
+  end
+  def validate_transaction(_), do: {:error, "Transaction must be binary data"}
+
+  @doc """
   Decodes a private key from a base58 encoded string or uses raw binary.
   """
   def decode_private_key(private_key) when is_binary(private_key) do
     # Check if it's likely a Base58 encoded key
     if String.match?(private_key, ~r/^[1-9A-HJ-NP-Za-km-z]{32,88}$/) do
       case Base58.decode(private_key) do
-        {:ok, decoded} -> {:ok, decoded}
+        {:ok, decoded} ->
+          if byte_size(decoded) == 64 do
+            {:ok, decoded}
+          else
+            {:error, "Invalid keypair length"}
+          end
         :error -> {:error, "Invalid Base58 private key format"}
       end
     else
-      # Assume it's already binary data
-      {:ok, private_key}
+      # For raw binary, validate the length
+      if byte_size(private_key) == 64 do
+        {:ok, private_key}
+      else
+        {:error, "Invalid keypair length"}
+      end
     end
   end
+  def decode_private_key(_), do: {:error, "Private key must be binary data"}
 
   @doc """
   Signs a raw binary transaction with the provided keypair.
@@ -48,32 +71,25 @@ defmodule SolanaTransactionSender do
   """
   def sign_transaction(transaction, keypair) when is_binary(transaction) and is_binary(keypair) do
     try do
-      # Extract the secret key from keypair (first 32 bytes in Solana's keypair format)
-      # Note: In a real implementation, you'd handle this based on your keypair format
-      <<secret_key::binary-size(32), _public_key::binary-size(32)>> = keypair
+      # Extract the secret key and public key from keypair
+      <<secret_key::binary-size(32), public_key::binary-size(32)>> = keypair
 
-      # Find the message part of the transaction that needs to be signed
-      # In a real implementation, you'd need to parse the Solana transaction format properly
-      # This is a simplified example assuming the transaction is already properly formatted
-      # and just needs the signature added
-      
-      # Use native Erlang/Elixir crypto for Ed25519 signing
-      signature = :crypto.sign(:eddsa, :none, transaction, secret_key, [curve: :ed25519])
-      
-      # In a real implementation, you would:
-      # 1. Parse the transaction to find the signature table
-      # 2. Insert the signature in the right position
-      # 3. Update any necessary fields
-      
-      # This is a simplified approach - in a real implementation you'd need to properly
-      # modify the transaction format according to Solana's specification
-      signed_tx = transaction <> <<0>> <> signature
-      
+      # In Solana, we need to sign the message part of the transaction
+      # This is a simplified version - in production you'd need to properly
+      # parse the transaction format and handle the signature table
+
+      signature = :crypto.sign(:eddsa, :none, transaction, [secret_key, :ed25519])
+
+      # Construct signed transaction
+      # Format: [signature_count(1 byte)][signature(64 bytes)][rest of transaction]
+      signed_tx = <<1::8, signature::binary, transaction::binary>>
+
       {:ok, signed_tx}
     rescue
       e -> {:error, "Failed to sign transaction: #{inspect(e)}"}
     end
   end
+  def sign_transaction(_, _), do: {:error, "Invalid transaction or keypair format"}
 
   @doc """
   Encodes a signed transaction for transmission.
@@ -83,22 +99,24 @@ defmodule SolanaTransactionSender do
     encoded = Base.encode64(signed_transaction)
     {:ok, encoded}
   end
+  def encode_transaction(_), do: {:error, "Invalid signed transaction format"}
 
   @doc """
   Sends the transaction to the Solana blockchain via RPC.
   """
-  def send_transaction(encoded_transaction, rpc_url) do
+  def send_transaction(encoded_transaction, rpc_url) when is_binary(encoded_transaction) and is_binary(rpc_url) do
     # Prepare the JSON-RPC request payload
     payload = %{
       jsonrpc: "2.0",
-      id: 1,
+      id: System.unique_integer([:positive]),
       method: "sendTransaction",
       params: [
         encoded_transaction,
         %{
           encoding: "base64",
           preflightCommitment: "confirmed",
-          skipPreflight: false
+          skipPreflight: false,
+          maxRetries: 3
         }
       ]
     }
@@ -107,23 +125,26 @@ defmodule SolanaTransactionSender do
       {"Content-Type", "application/json"}
     ]
 
-    # Send the request
-    case HTTPoison.post(rpc_url, Jason.encode!(payload), headers) do
+    # Send the request with timeout
+    case HTTPoison.post(rpc_url, Jason.encode!(payload), headers, [timeout: 30_000, recv_timeout: 30_000]) do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         case Jason.decode(body) do
           {:ok, %{"result" => signature}} ->
             {:ok, signature}
+          {:ok, %{"error" => %{"message" => message}}} ->
+            {:error, "RPC error: #{message}"}
           {:ok, %{"error" => error}} ->
             {:error, "RPC error: #{inspect(error)}"}
           {:error, decode_error} ->
             {:error, "Failed to decode JSON response: #{inspect(decode_error)}"}
         end
-      {:ok, %HTTPoison.Response{status_code: status_code}} ->
-        {:error, "HTTP error: #{status_code}"}
+      {:ok, %HTTPoison.Response{status_code: status_code, body: body}} ->
+        {:error, "HTTP error #{status_code}: #{inspect(body)}"}
       {:error, %HTTPoison.Error{reason: reason}} ->
         {:error, "HTTP request failed: #{inspect(reason)}"}
     end
   end
+  def send_transaction(_, _), do: {:error, "Invalid transaction or RPC URL format"}
 end
 
 # Example usage:
@@ -131,8 +152,9 @@ end
 # # Example with a raw binary transaction
 # # The transaction would be an actual binary in your code
 # transaction = <<1, 0, 1, 3, 23, 0, 5, 231, 185, 7, 89, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0>>
-# 
+#
 # # Your private key could be a base58 string or a raw binary
+# private_key = "your_base58_private_key_here"
 #
 # result = SolanaTransactionSender.sign_and_send_transaction(
 #   transaction,
