@@ -1,7 +1,7 @@
 use bs58;
 use mpl_bubblegum::{accounts::TreeConfig, instructions::TransferBuilder};
 use reqwest::blocking::Client;
-use rustler::NifResult;
+use rustler::{Error as NifError, NifResult};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use solana_client::rpc_client::RpcClient;
@@ -14,7 +14,7 @@ use std::str::FromStr;
 use crate::{KeypairWrapper, PubkeyWrapper};
 
 #[rustler::nif]
-fn transfer_transaction(
+pub fn transfer_transaction(
     rpc_url: String,
     asset_id: PubkeyWrapper,
     owner: PubkeyWrapper,
@@ -26,17 +26,25 @@ fn transfer_transaction(
     let payer = payer.0;
     let receiver = receiver.0;
 
-    let asset = get_asset_details(&asset_id.0.to_string(), &rpc_url)
-        .unwrap()
-        .unwrap();
-    let proof_data = get_asset_proof(&asset_id.0.to_string(), &rpc_url)
-        .unwrap()
-        .unwrap();
+    let asset = match get_asset_details(&rpc_url, &asset_id.0.to_string()) {
+        Ok(Some(asset)) => asset,
+        Ok(None) => return Err(NifError::Term(Box::new("Failed to retrieve asset details"))),
+        Err(e) => {
+            return Err(NifError::Term(Box::new(format!(
+                "Asset details error: {}",
+                e
+            ))))
+        }
+    };
 
-    // Calculate tree config
+    let proof_data = match get_asset_proof(&rpc_url, &asset_id.0.to_string()) {
+        Ok(Some(proof)) => proof,
+        Ok(None) => return Err(NifError::Term(Box::new("Failed to retrieve asset proof"))),
+        Err(e) => return Err(NifError::Term(Box::new(format!("Proof data error: {}", e)))),
+    };
+
     let (tree_config, _) = TreeConfig::find_pda(&Pubkey::from_str(&asset.tree).unwrap());
 
-    // Decode hashes
     let data_hash = decode(&asset.data_hash).unwrap();
     let creator_hash = decode(&asset.creator_hash).unwrap();
     let root_bytes = decode(&proof_data.root).unwrap();
@@ -55,6 +63,7 @@ fn transfer_transaction(
             is_writable: meta.is_writable,
         })
         .collect();
+
     let transfer_ix = TransferBuilder::new()
         .leaf_owner(owner, true)
         .leaf_delegate(owner, false)
@@ -121,7 +130,6 @@ fn get_asset_proof(
 
     if let Some(compression) = response["result"].as_object() {
         let compression_data: Proof = serde_json::from_value(Value::Object(compression.clone()))?;
-        // println!("Compression Data: {:?}", compression_data);
         return Ok(Some(compression_data));
     }
 

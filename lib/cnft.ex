@@ -3,19 +3,21 @@ defmodule CNFT do
   use Rustler, otp_app: :cnft, crate: "cnft"
 
   def create_tree_transaction(rpc_client, payer), do: :erlang.nif_error(:nif_not_loaded)
-  def test do 
-    data = create_tree_transaction("https://api.devnet.solana.com", private_key)
-    IO.inspect(data, label: "Transaction Data")
-  end
-
   def mint_transaction(rpc_client, tree, owner, payer, name, symbol, uri, nounce), do: :erlang.nif_error(:nif_not_loaded)
-  def test_mint do
+  def transfer_transaction(rpc_client, asset, owner, payer, receiver), do: :erlang.nif_error(:nif_not_loaded)
 
-    data = mint_transaction("https://api.devnet.solana.com","5Pgeo5CxjawjyekQiVXo2UxSvABWoteBg1s7bamAyjCj", "EXBdeRCdiNChKyD7akt64n9HgSXEpUtpPEhmbnm4L6iH", private_key, "test_mint", "TST", "https://solana.com", 1)
-    IO.inspect(data, label: "Transaction Data")
+  def create(rpc_client, payer) do
+    data = create_tree_transaction(rpc_client, payer)
+    IO.inspect(data, label: "Create Tree")
   end
-  def add(a,b) do
-    a + b
+
+  def mint(rpc_client, tree, owner, payer, name, symbol, uri, nounce) do
+    data = mint_transaction(rpc_client, tree, owner, payer, name, symbol, uri, nounce)
+    IO.inspect(data, label: "Mint")
   end
-  def transfer_transaction(rpc_client,tree, asset, owner,payer, receiver, nounce), do: :erlang.nif_error(:nif_not_loaded)
+
+  def transfer(rpc_client, asset, owner, payer, receiver) do
+    data = transfer_transaction(rpc_client, asset, owner, payer, receiver)
+    IO.inspect(data, label: "Transfer")
+  end
 end
