@@ -4,8 +4,6 @@ Cnft is an Elixir library for handling transactions related to creating, minting
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed by adding `cnft` to your list of dependencies in `mix.exs`:
-
 ```elixir
 def deps do
   [
@@ -22,7 +20,7 @@ end
 rpc_client = # Your RPC client
 payer = # The account that will pay for the transaction
 
-CNFT.create(rpc_client, payer)
+CNFT.create(rpc_client, payer) # returns signture and created tree account address
 ```
 
 ### Minting a New NFT

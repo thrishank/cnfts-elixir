@@ -8,6 +8,8 @@ edition = "2021"
 name = "cnft"
 crate-type = ["cdylib"]
 
+[workspace]
+
 [dependencies]
 rustler = "0.36.1"
 mpl-bubblegum = "1.4.0"
