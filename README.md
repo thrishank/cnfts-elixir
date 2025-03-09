@@ -31,7 +31,7 @@ payer = # The account that will pay for the transaction
 name = "MyNFT"
 symbol = "MNFT"
 uri = "http://example.com/metadata"
-nounce = 1
+nounce = 0  # starts at 0 incerease by one everytime you mint a cnft
 
 {mint_sign, asset} = CNFT.mint(rpc_client, tree, owner, payer, name, symbol, uri, nounce)
 ```
