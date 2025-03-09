@@ -21,9 +21,7 @@ defmodule Cnft.MixProject do
   defp deps do
     [
 	      {:rustler, "~> 0.36.1", runtime: false},
-        {:httpoison, "~> 1.8"},
-        {:jason, "~> 1.2"},
-        {:base58, "~> 0.1.1"}
+        {:mox, "~> 1.1", only: :test}
     ]
   end
 end

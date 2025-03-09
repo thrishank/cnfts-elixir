@@ -39,5 +39,8 @@ impl<'a> Decoder<'a> for RpcClientWrapper {
     }
 }
 pub mod instructions;
+// TODO
+// 1. Size const issue in create.rs - not possible to define const in rustler
+// 2. nonce issue in mint.rs
 
 rustler::init!("Elixir.CNFT");
