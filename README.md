@@ -20,7 +20,7 @@ end
 rpc_client = # Your RPC client
 payer = # The account that will pay for the transaction
 
-{create_sign, tree} = CNFT.create(rpc_client, payer) # returns signture and created tree account address
+{create_sign, tree} = CNFT.create_tree_transaction(rpc_client, payer) 
 ```
 
 ### Minting a New NFT
@@ -33,7 +33,7 @@ symbol = "MNFT"
 uri = "http://example.com/metadata"
 nounce = 0  # starts at 0 incerease by one everytime you mint a cnft
 
-{mint_sign, asset} = CNFT.mint(rpc_client, tree, owner, payer, name, symbol, uri, nounce)
+{mint_sign, asset} = CNFT.mint_transaction(rpc_client, tree, owner, payer, name, symbol, uri, nounce)
 ```
 
 ### Transferring an NFT
@@ -41,5 +41,5 @@ nounce = 0  # starts at 0 incerease by one everytime you mint a cnft
 ```elixir
 receiver = # The account that will receive the NFT
 
-transfer_sign = CNFT.transfer(rpc_client, asset, owner, payer, receiver)
+transfer_sign = CNFT.transfer_transaction(rpc_client, asset, owner, payer, receiver)
 ```
