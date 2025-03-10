@@ -7,7 +7,7 @@ Cnft is an Elixir library for handling transactions related to creating, minting
 ```elixir
 def deps do
   [
-    {:cnft, "~> 0.1.0"}
+    {:cnft, "~> 0.1.5"}
   ]
 end
 ```
@@ -20,7 +20,7 @@ end
 rpc_client = # Your RPC client
 payer = # The account that will pay for the transaction
 
-{create_sign, tree} = CNFT.create_tree_transaction(rpc_client, payer) 
+{create_sign, tree} = CNFT.create_tree_transaction(rpc_client, payer)
 ```
 
 ### Minting a New NFT
@@ -31,15 +31,18 @@ payer = # The account that will pay for the transaction
 name = "MyNFT"
 symbol = "MNFT"
 uri = "http://example.com/metadata"
-nounce = 0  # starts at 0 incerease by one everytime you mint a cnft
+seller_fee_basis_points = 100
+is_mutable = true
 
-{mint_sign, asset} = CNFT.mint_transaction(rpc_client, tree, owner, payer, name, symbol, uri, nounce)
+CNFT.mint(rpc_client, tree, owner, payer, name, symbol, uri, seller_fee_basis_points, is_mutable)
 ```
 
 ### Transferring an NFT
 
 ```elixir
 receiver = # The account that will receive the NFT
+nonce = 0 # Start at 0 and increment for each mint
 
-transfer_sign = CNFT.transfer_transaction(rpc_client, asset, owner, payer, receiver)
+asset = CNFT.get_asset_address(tree, nonce)
+CNFT.transfer(rpc_client, asset, owner, payer, receiver)
 ```

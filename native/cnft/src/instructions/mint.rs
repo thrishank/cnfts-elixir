@@ -19,8 +19,9 @@ pub fn mint_transaction(
     name: String,
     symbol: String,
     uri: String,
-    nonce: u64,
-) -> NifResult<(String, String)> {
+    seller_fee_basis_points: u16,
+    is_mutable: bool,
+) -> NifResult<String> {
     let rpc_client = rpc_client.0;
     let tree = tree.0;
     let owner = owner.0;
@@ -30,9 +31,9 @@ pub fn mint_transaction(
         name,
         symbol,
         uri,
-        seller_fee_basis_points: 100,
+        seller_fee_basis_points, // 100
         primary_sale_happened: false,
-        is_mutable: true,
+        is_mutable, // true
         edition_nonce: None,
         token_standard: Some(TokenStandard::NonFungible),
         collection: None,
@@ -65,9 +66,8 @@ pub fn mint_transaction(
 
     let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
 
-    let asset_id = get_asset_id(&tree, nonce);
-
     /*
+        let asset_id = get_asset_id(&tree, nonce);
         let data_hash = hash_metadata(&args).unwrap();
         let creator_hash = hash_creators(&args.creators);
         let leaf = LeafSchema::V1 {
@@ -80,5 +80,11 @@ pub fn mint_transaction(
         };
         // println!("Leaf: {:?}", leaf);
     */
-    Ok((signature.to_string(), asset_id.to_string()))
+    Ok(signature.to_string())
+}
+
+#[rustler::nif]
+pub fn get_asset_address(tree: PubkeyWrapper, nonce: u64) -> String {
+    let asset_id = get_asset_id(&tree.0, nonce);
+    asset_id.to_string()
 }
