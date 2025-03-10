@@ -30,8 +30,8 @@ defmodule Example do
     CNFT.transfer_transaction(rpc_client, asset_id, owner, payer, receiver)
 
     # Print logs
-    IO.puts("Minted NFT #{nonce + 1} with signature ID: #{mint_sign}")
-    IO.puts("Transferred NFT (Asset ID: #{asset_id}) to #{receiver} with signature ID: #{transfer_sign}")
+    IO.puts("Minted NFT #{nonce + 1} with signature: #{mint_sign}")
+    IO.puts("Transferred NFT (Asset ID: #{asset_id}) to #{receiver} with signature: #{transfer_sign}")
 
     # Recursive call with incremented nonce
     loop(tree, rpc_client, owner, payer, receiver, nonce + 1, num_iterations)

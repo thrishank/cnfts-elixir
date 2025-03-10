@@ -14,6 +14,7 @@ impl<'a> Decoder<'a> for PubkeyWrapper {
     }
 }
 
+// Wrapper type for Keypair
 pub struct KeypairWrapper(Keypair);
 impl<'a> Decoder<'a> for KeypairWrapper {
     fn decode(term: Term<'a>) -> NifResult<Self> {
@@ -39,8 +40,5 @@ impl<'a> Decoder<'a> for RpcClientWrapper {
     }
 }
 pub mod instructions;
-// TODO
-// 1. Size const issue in create.rs - not possible to define const in rustler
-// 2. nonce issue in mint.rs
 
 rustler::init!("Elixir.CNFT");
