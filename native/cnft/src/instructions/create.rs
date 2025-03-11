@@ -12,8 +12,8 @@ use crate::{KeypairWrapper, RpcClientWrapper};
 pub fn create_tree_config(
     rpc_client: RpcClientWrapper,
     payer: KeypairWrapper,
-    MAX_DEPTH: u32,
-    MAX_BUFFER_SIZE: u32,
+    max_depth: u32,
+    max_buffer_size: u32,
 ) -> NifResult<(String, String)> {
     let rpc_client = rpc_client.0;
     let merkle_tree = Keypair::new();
@@ -21,7 +21,7 @@ pub fn create_tree_config(
 
     let (tree_config, _) = TreeConfig::find_pda(&merkle_tree.pubkey());
 
-    let size = get_size(MAX_DEPTH, MAX_BUFFER_SIZE).unwrap();
+    let size = get_size(max_depth, max_buffer_size).unwrap();
 
     let rent = match rpc_client.get_minimum_balance_for_rent_exemption(size as usize) {
         Ok(rent) => rent,
@@ -41,8 +41,8 @@ pub fn create_tree_config(
         .tree_config(tree_config)
         .payer(payer.pubkey())
         .tree_creator(payer.pubkey())
-        .max_depth(MAX_DEPTH)
-        .max_buffer_size(MAX_BUFFER_SIZE)
+        .max_depth(max_depth)
+        .max_buffer_size(max_buffer_size)
         .instruction();
 
     let recent_blockhash = match rpc_client.get_latest_blockhash() {
