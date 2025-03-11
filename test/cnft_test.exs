@@ -4,9 +4,9 @@ defmodule CNFTTest do
   import ExUnit.CaptureIO
 
   @rpc_client "https://api.devnet.solana.com"
-  @private_key "3kSPdPULig47U2UzcsTxVBmSP6Ddor2W9bA1oc6ThJGET6fCFU5QMs7L1Azh9zBB83GuTXZSBGhBVTy1LmLBWto7"
-  @owner_key "5Z6TZ11JkxyeXgZ8a1UyuWcp1BZ7QsySNWWRpmx9qgDK"
-  @receiver_key "thrbabBvANwvKdV34GdrFUDXB6YMsksdfmiKj2ZUV3m"
+  @private_key ""
+  @owner_key ""
+  @receiver_key ""
   @invalid_key "invalid_key"
   @invalid_rpc "https://invalid.rpc.endpoint"
 
