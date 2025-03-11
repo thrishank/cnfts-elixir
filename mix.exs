@@ -4,7 +4,7 @@ defmodule Cnft.MixProject do
   def project do
     [
       app: :cnft,
-      version: "0.1.5",
+      version: "0.1.6",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       description: "An Elixir project to mint and transfer Solana CNFTs",
@@ -32,7 +32,6 @@ defmodule Cnft.MixProject do
 
   defp package do
     [
-      # Replace with your actual license
       licenses: ["MIT"],
       links: %{"GitHub" => "https://github.com/thrishank/cnfts-elixir"},
       maintainers: ["Thrishank"],
