@@ -14,7 +14,7 @@ use std::str::FromStr;
 use crate::{KeypairWrapper, PubkeyWrapper};
 
 #[rustler::nif]
-pub fn transfer_transaction(
+pub fn transfer(
     rpc_url: String,
     asset_id: PubkeyWrapper,
     owner: PubkeyWrapper,

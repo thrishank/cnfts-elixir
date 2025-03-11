@@ -16,7 +16,8 @@ defmodule CNFT do
   ## Returns
     - A transaction data structure.
   """
-  def create_tree_transaction(rpc_client, payer), do: :erlang.nif_error(:nif_not_loaded)
+  def create_tree_config(rpc_client, payer, MAX_DEPTH, MAX_BUFFER_SIZE),
+    do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Mints a new NFT on the Solana blockchain.
@@ -31,12 +32,14 @@ defmodule CNFT do
     - uri: The URI pointing to the NFT metadata.
     - seller_fee_basis_points: The royalty fee in basis points (e.g., 100 = 1%)
     - is_mutable: Boolean indicating if the NFT metadata can be updated. 
+    - nonce: A unique identifier for the minted NFT.
+
 
   ## Returns
     - `{:ok, transaction_signature}`: A tuple containing the atom `:ok` and the transaction signature as a string.
     - `{:error, reason}`: A tuple containing the atom `:error` and a reason for failure (if the NIF fails).
   """
-  def mint_transaction(
+  def mint_v1(
         rpc_client,
         tree,
         owner,
@@ -45,22 +48,11 @@ defmodule CNFT do
         symbol,
         uri,
         seller_fee_basis_points,
-        is_mutable
+        is_mutable,
+        nonce
       ) do
     :erlang.nif_error(:nif_not_loaded)
   end
-
-  @doc """
-  Gets the asset address for a minted NFT.
-
-  ## Parameters
-    - tree: The public key (as a string) of the tree structure where the NFT is minted.
-    - nonce: A unique identifier for the minted NFT.
-
-  ## Returns
-    - The asset public key address as a string.
-  """
-  def get_asset_address(tree, nonce), do: :erlang.nif_error(:nif_not_loaded)
 
   @doc """
   Transfers an NFT to a new owner.
@@ -75,6 +67,6 @@ defmodule CNFT do
   ## Returns
     - A transaction data structure.
   """
-  def transfer_transaction(rpc_client, asset, owner, payer, receiver),
+  def transfer(rpc_client, asset, owner, payer, receiver),
     do: :erlang.nif_error(:nif_not_loaded)
 end
