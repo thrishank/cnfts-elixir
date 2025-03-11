@@ -19,7 +19,7 @@ end
 - Elixir 1.12 or later
 - Rust toolchain (for native compilation)
 
-## Usage 
+## Usage
 
 ### Creating a Tree Config
 
@@ -34,8 +34,10 @@ max_buffer_size =
 {create_sign, tree} = CNFT.create_tree_transaction(rpc_client, payer, max_depth, max_buffer_size)
 ```
 
-### Minting a New NFT
+### Minting a New Compressed NFT
+
 Once you have a tree configured, you can mint compressed NFTs:
+
 ```elixir
 tree = ""  # The public key of your Merkle tree
 owner = "" # The recipient/owner of the NFT
@@ -43,7 +45,7 @@ payer = "" # The account that will pay for the transaction
 name  = "MyNFT"  # NFT name
 symbol = "MNFT"  # NFT symbol
 uri = "http://example.com/metadata" # Metadata URI
-seller_fee_basis_points = 100 # 5% royalty fee (500 basis points)              
+seller_fee_basis_points = 100 # 5% royalty fee (500 basis points)
 is_mutable = true # Whether the NFT can be updated
 nonce = 0 # Unique identifier Start at 0 (increment for each mint)
 
@@ -60,30 +62,45 @@ receiver = "RECEIVER_PUBLIC_KEY" # The account that will receive the NFT
 transfer_sign = CNFT.transfer(rpc_client, asset, owner, payer, receiver)
 ```
 
+## Demo
+
+1. [create tree transaction](https://explorer.solana.com/tx/5iiE1Vt7B47hxXTuyDM2eDENAMGEUQ3VWTKEzDDmjmTz7q2JbSK3yJNEs9wj5aiWiAf2JGtJJULqobYS288NysBD?cluster=devnet)
+2. [mint cnft transaction](https://explorer.solana.com/tx/3VbM3heuhpurc31UdQbko7NYowNXXtpgBrV7oUDVCpWtVRMfbW1JFqH3g2nRdR376t5F4Z1ku3erG4vBdfnoWpsD?cluster=devnet)
+3. [transfer cnft transaction](https://explorer.solana.com/tx/5PWoWUScjLrSbPXrpqwGnBLzp8M8CHtjgNyiuiQ9kVnBkKYwYeGEVVJerPprbKUXiZLBEQPVJqRs365b3uDhGmLs?cluster=devnet)
+
 ## Development
 
 1. Clone the repository
+
 ```bash
-git clone https://github.com/thrishank/cnfts-elixir 
+git clone https://github.com/thrishank/cnfts-elixir
 
 cd cnfts-elixir
 ```
+
 2. Install dependencies with `mix deps.get`
+
 ```bash
 mix deps.get
 ```
+
 3. Ensure Rust is installed for native compilation
+
 ```bash
 mix compile
 ```
+
 4. update the varaible in test/cnfts_test.exs
+
 ```elixir
 @rpc_client ""
 @private_key ""
 @owner_key ""
 @receiver_key ""
 ```
-5. Run tests 
+
+5. Run tests
+
 ```bash
 mix test
 ```
