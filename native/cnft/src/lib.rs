@@ -3,7 +3,7 @@ use solana_client::rpc_client::RpcClient;
 use solana_sdk::{pubkey::Pubkey, signature::Keypair};
 use std::str::FromStr;
 
-// Wrapper type for Pubkey
+// Wrapper for PublicKey type
 pub struct PubkeyWrapper(Pubkey);
 impl<'a> Decoder<'a> for PubkeyWrapper {
     fn decode(term: Term<'a>) -> NifResult<Self> {
@@ -14,20 +14,37 @@ impl<'a> Decoder<'a> for PubkeyWrapper {
     }
 }
 
-// Wrapper type for Keypair
+// Wrapper for Keypair type
 pub struct KeypairWrapper(Keypair);
 impl<'a> Decoder<'a> for KeypairWrapper {
     fn decode(term: Term<'a>) -> NifResult<Self> {
-        let secret_key_vec: Vec<u8> = term.decode()?;
-        let secret_key_bytes: [u8; 64] = secret_key_vec
-            .as_slice()
-            .try_into()
-            .map_err(|_| Error::RaiseAtom("invalid_secret_key"))?;
-
-        let keypair = Keypair::from_bytes(&secret_key_bytes)
-            .map_err(|_| Error::RaiseAtom("invalid_keypair"))?;
-
-        Ok(KeypairWrapper(keypair))
+        match term.decode::<Vec<u8>>() {
+            Ok(secret_key_vec) => {
+                let secret_key_bytes: [u8; 64] = secret_key_vec
+                    .as_slice()
+                    .try_into()
+                    .map_err(|_| Error::RaiseAtom("invalid_secret_key"))?;
+                let keypair = Keypair::from_bytes(&secret_key_bytes)
+                    .map_err(|_| Error::RaiseAtom("invalid_keypair"))?;
+                Ok(KeypairWrapper(keypair))
+            }
+            // If it's not a binary, try to interpret it as a Base58 string
+            Err(_) => {
+                let bs58_string: String = term
+                    .decode()
+                    .map_err(|_| Error::RaiseAtom("invalid_input_format"))?;
+                let decoded_bytes = bs58::decode(&bs58_string)
+                    .into_vec()
+                    .map_err(|_| Error::RaiseAtom("invalid_bs58_encoding"))?;
+                let secret_key_bytes: [u8; 64] = decoded_bytes
+                    .as_slice()
+                    .try_into()
+                    .map_err(|_| Error::RaiseAtom("invalid_secret_key_length"))?;
+                let keypair = Keypair::from_bytes(&secret_key_bytes)
+                    .map_err(|_| Error::RaiseAtom("invalid_keypair"))?;
+                Ok(KeypairWrapper(keypair))
+            }
+        }
     }
 }
 
@@ -39,6 +56,7 @@ impl<'a> Decoder<'a> for RpcClientWrapper {
         Ok(RpcClientWrapper(RpcClient::new(rpc_url)))
     }
 }
+
 pub mod instructions;
 
 rustler::init!("Elixir.CNFT");
