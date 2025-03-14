@@ -11,7 +11,7 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-use crate::{KeypairWrapper, PubkeyWrapper};
+use crate::{KeypairWrapper, PubkeyWrapper, RpcClientWrapper};
 
 #[rustler::nif]
 pub fn transfer(
@@ -89,6 +89,52 @@ pub fn transfer(
     let signature = rpc_client.send_and_confirm_transaction(&tx).unwrap();
 
     Ok(signature.to_string())
+}
+
+#[rustler::nif]
+pub fn get_asset(rpc_url: String, asset_id: PubkeyWrapper) -> NifResult<String> {
+    let asset_id = asset_id.0;
+    let client = Client::new();
+    let request_body = json!({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "getAsset",
+        "params": { "id": asset_id.to_string() }
+    });
+
+    let response: Value = client
+        .post(&rpc_url)
+        .json(&request_body)
+        .send()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Request error: {}", e))))?
+        .json()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Response error: {}", e))))?;
+
+    serde_json::to_string(&response)
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Serialization error: {}", e))))
+}
+
+#[rustler::nif]
+pub fn get_proof(rpc_url: String, asset_id: PubkeyWrapper) -> rustler::NifResult<String> {
+    let asset_id = asset_id.0;
+    let client = Client::new();
+    let request_body = json!({
+        "jsonrpc": "2.0",
+        "id": "1",
+        "method": "getAssetProof",
+        "params": { "id": asset_id.to_string() }
+    });
+
+    let response: Value = client
+        .post(&rpc_url)
+        .json(&request_body)
+        .send()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Request error: {}", e))))?
+        .json()
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Response error: {}", e))))?;
+
+    serde_json::to_string(&response)
+        .map_err(|e| rustler::Error::Term(Box::new(format!("Serialization error: {}", e))))
 }
 
 fn get_asset_details(

@@ -4,7 +4,7 @@ defmodule Cnft.MixProject do
   def project do
     [
       app: :cnft,
-      version: "0.1.6",
+      version: "0.1.7",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
       description: "An Elixir project to mint and transfer Solana CNFTs",

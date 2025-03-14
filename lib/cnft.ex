@@ -69,4 +69,28 @@ defmodule CNFT do
   """
   def transfer(rpc_client, asset, owner, payer, receiver),
     do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+   Returns the information of a compressed/standard asset including metadata and owner.
+
+   ## Parameters
+     - rpc_client: The RPC url to interact with the Solana blockchain.
+     - asset: The NFT asset to retrieve data for.
+
+   ## Returns 
+     - The api reponse in JSON string. 
+  """
+  def get_asset(rpc_client, asset), do: :erlang.nif_error(:nif_not_loaded)
+
+  @doc """
+   Returns the merkle tree proof information for a compressed asset.
+
+   ## Parameters
+     - rpc_client: The RPC url to interact with the Solana blockchain.
+     - asset: The NFT asset to retrieve data for.
+
+   ## Returns 
+     - The api reponse in JSON string.
+  """
+  def get_proof(rpc_client, asset), do: :erlang.nif_error(:nif_not_loaded)
 end
